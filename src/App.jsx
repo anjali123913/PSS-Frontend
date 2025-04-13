@@ -8,15 +8,16 @@ import EditPlace from "./pages/EditPlace";
 import Login from "./pages/Login";
 import { AuthContext } from "./context/Authcontext";
 import { useState } from "react";
+import AddPlaceForm from "./AddPlaceForm";
 export default function App() {
   const [user,setuser ] = useState({});
-  const [tocken,settocken ] = useState({});
+  const [token,settoken ] = useState({});
 
   return (
     <Router>
-      <AuthContext.Provider value={{settocken,setuser,tocken,user}}>
+      <AuthContext.Provider value={{settoken,setuser,token,user}}>
       <Navbar />
-      <Login/>
+      {/* <Login/> */}
       <div className="container mx-auto p-4">
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -24,9 +25,10 @@ export default function App() {
           <Route path="/user-profile/:id" element={<UserProfile/>} />
           <Route path="/places" element={<Places/>} />
           <Route path="/edit-place/:id" element={<EditPlace/>} />
+          <Route path="/AddPlace" element={<AddPlaceForm/>} />
 
           <Route path="/register" element={<SignupPage />} />
-          <Route path="/" element={<h1 className='text-center text-3xl font-bold'>Welcome to MyApp</h1>} />
+          {/* <Route path="/" element={<h1 className='text-center text-3xl font-bold'>Welcome to MyApp</h1>} /> */}
         </Routes>
       </div>
       </AuthContext.Provider>/

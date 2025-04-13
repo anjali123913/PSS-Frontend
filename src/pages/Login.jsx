@@ -1,13 +1,14 @@
 import { useContext, useState } from "react";
 import axios from "axios"; // Import axios
 import { AuthContext } from "../context/Authcontext";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-const {settocken,setuser} = useContext(AuthContext);
-
+const {settoken,setuser} = useContext(AuthContext);
+const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -16,7 +17,8 @@ const {settocken,setuser} = useContext(AuthContext);
         password,
       });
       console.log(response);
-      settocken(response.data.token);
+      settoken(response.data.token);
+navigate("/AddPlace")
     } catch (error) {
       console.error("Login error: ", error);
     }

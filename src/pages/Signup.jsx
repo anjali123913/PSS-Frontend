@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState } from "react";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 
@@ -13,9 +14,10 @@ export default function SignupPage() {
   };
 const sigupUser =async (e) => {
   try {
-    const response = await ("http://localhost:3000/api/signup")
+    const response = await axios.post("http://localhost:3000/api/signup")
+    console.log(response)
   } catch (error) {
-    console.log(object)
+    console.log(error)
   }}
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
