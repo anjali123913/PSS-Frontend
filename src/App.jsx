@@ -11,11 +11,12 @@ import { useState } from "react";
 import AddPlaceForm from "./AddPlaceForm";
 export default function App() {
   const [user,setuser ] = useState({});
+  const [placeId,setplaceId ] = useState({});
   const [token,settoken ] = useState({});
 
   return (
     <Router>
-      <AuthContext.Provider value={{settoken,setuser,token,user}}>
+      <AuthContext.Provider value={{settoken,setuser,token,user,placeId,setplaceId}}>
       <Navbar />
       {/* <Login/> */}
       <div className="container mx-auto p-4">
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/places" element={<Places/>} />
           <Route path="/edit-place/:id" element={<EditPlace/>} />
           <Route path="/AddPlace" element={<AddPlaceForm/>} />
+          <Route path="/places/:id/edit" element={<EditPlace />} />
 
           <Route path="/register" element={<SignupPage />} />
           {/* <Route path="/" element={<h1 className='text-center text-3xl font-bold'>Welcome to MyApp</h1>} /> */}

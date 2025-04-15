@@ -1,45 +1,125 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../context/Authcontext";
 import axios from "axios";
 // A simple modal component to show the OpenStreetMap
-function MapModal({ isOpen, closeModal, lat, lon }) {
+import { useEffect, useState } from "react";
+
+
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
+import "leaflet-routing-machine";
+
+ function MapModal({ isOpen, closeModal, address }) {
+  const [userCoords, setUserCoords] = useState(null);
+  const [placeCoords, setPlaceCoords] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+
+  useEffect(() => {
+    const fetchRouteData = async () => {
+      if (!isOpen || !address) return;
+
+      setLoading(true);
+      try {
+        // Get user's current location
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setUserCoords({ lat: latitude, lng: longitude });
+
+            // Get place coordinates from address
+            const response = await axios.get(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                address
+              )}`
+            );
+
+            if (response.data.length > 0) {
+              const { lat, lon } = response.data[0];
+              setPlaceCoords({ lat, lng: lon });
+            } else {
+              setPlaceCoords(null);
+            }
+
+            setLoading(false);
+          },
+          (err) => {
+            console.error("Geolocation error:", err);
+            setLoading(false);
+          }
+        );
+      } catch (error) {
+        console.error("Error fetching place coordinates:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchRouteData();
+  }, [isOpen, address]);
+
+  useEffect(() => {
+    if (!userCoords || !placeCoords) return;
+
+    const map = L.map("map").setView([userCoords.lat, userCoords.lng], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    L.Routing.control({
+      waypoints: [
+        L.latLng(userCoords.lat, userCoords.lng),
+        L.latLng(placeCoords.lat, placeCoords.lng),
+      ],
+      routeWhileDragging: false,
+    }).addTo(map);
+
+    return () => {
+      map.remove(); // Clean up
+    };
+  }, [userCoords, placeCoords]);
+
+  if (!isOpen) return null;
+
   return (
-    isOpen && (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 md:w-1/2">
-          <button
-            onClick={closeModal}
-            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full"
-          >
-            X
-          </button>
-          <div className="h-96 w-full">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-                lon - 0.01
-              }%2C${lat - 0.01}%2C${lon + 0.01}%2C${lat + 0.01}&layer=mapnik`}
-              style={{ border: "0", width: "100%", height: "100%" }}
-              frameBorder="0"
-              allowFullScreen
-            ></iframe>
-          </div>
-        </div>
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
+      <div className="relative bg-white w-[95%] md:w-[800px] h-[600px] rounded-xl shadow-lg p-4">
+        <button
+          onClick={closeModal}
+          className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full text-sm"
+        >
+          ✕
+        </button>
+
+        {loading ? (
+          <p className="text-center mt-40 text-gray-500">Loading map...</p>
+        ) : !userCoords || !placeCoords ? (
+          <p className="text-center mt-40 text-red-600">
+            Could not load route. Try again.
+          </p>
+        ) : (
+          <div id="map" className="w-full h-full rounded-md" />
+        )}
       </div>
-    )
+    </div>
   );
 }
 
+
+
+
+
 export default function Places() {
   const [places, setPlaces] = useState();
-
+const {setPlaceId}=useContext(AuthContext);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [mapCoordinates, setMapCoordinates] = useState({ lat: 0, lon: 0 });
+  const [mapCoordinates, setMapCoordinates] = useState();
 
-  const openMapModal = (lat, lon) => {
-    setMapCoordinates({ lat, lon });
+  const openMapModal = (address) => {
+    setMapCoordinates( address );
     setIsMapOpen(true);
   };
 
@@ -64,6 +144,13 @@ export default function Places() {
   useEffect(() => {
     loadPlaces();
   }, []);
+  const editPlace =(id)=>{
+    setPlaceId(id);
+    console.log(id)
+    navigate(`/edit-place/${id}`);
+
+
+  }
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-4xl p-6 bg-white shadow-lg rounded-2xl">
@@ -111,17 +198,22 @@ export default function Places() {
                 {/* Actions */}
                 <div className="flex justify-between mt-4">
                   <button
-                    onClick={() => openMapModal(place.coordinates.lat, place.coordinates.lng )}
+                    onClick={() => openMapModal(place.address )}
                     className="text-blue-500 hover:underline"
                   >
                     View Map
                   </button>
-                  <Link
+                  {/* <Link
                     to={`/edit-place/${place.id}`}
                     className="text-green-500 hover:underline"
                   >
                     Edit
-                  </Link>
+                  </Link> */}
+                  <button 
+                  className="text-green-500 hover:underline"
+                  onClick={() => editPlace(place.id)}>
+                    edit
+                  </button>
                 </div>
               </div>
             </div>
@@ -133,8 +225,7 @@ export default function Places() {
       <MapModal
         isOpen={isMapOpen}
         closeModal={closeMapModal}
-        lat={mapCoordinates.lat}
-        lon={mapCoordinates.lon}
+        address={mapCoordinates}
       />
     </div>
   );
